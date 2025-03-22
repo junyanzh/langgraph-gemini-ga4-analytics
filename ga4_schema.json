@@ -1,0 +1,212 @@
+{
+        "dataset": "bigquery-public-data.ga4_obfuscated_sample_ecommerce",
+        "table_pattern": "events_*",
+        "description": "Google Analytics 4 e-commerce sample data containing shopping behaviors from Nov 2020 to Jan 2021",
+        
+        "core_fields": {
+            "event_date": {
+                "type": "STRING",
+                "description": "Date of the event in YYYYMMDD format"
+            },
+            "event_timestamp": {
+                "type": "INTEGER",
+                "description": "Timestamp in microseconds (UTC). Divide by 1,000,000 to convert to seconds"
+            },
+            "event_name": {
+                "type": "STRING",
+                "description": "Name of the event (purchase, view_item, etc.)"
+            },
+            "user_pseudo_id": {
+                "type": "STRING",
+                "description": "Unique identifier for user/client instance"
+            },
+            "user_id": {
+                "type": "STRING",
+                "description": "ID for logged-in users"
+            },
+            "user_first_touch_timestamp": {
+                "type": "INTEGER",
+                "description": "First interaction timestamp in microseconds"
+            }
+        },
+        
+        "ecommerce_fields": {
+            "ecommerce.transaction_id": {
+                "type": "STRING",
+                "description": "Unique transaction identifier"
+            },
+            "ecommerce.purchase_revenue": {
+                "type": "FLOAT",
+                "description": "Total revenue of the purchase in local currency"
+            },
+            "ecommerce.purchase_revenue_in_usd": {
+                "type": "FLOAT",
+                "description": "Total revenue in USD"
+            },
+            "ecommerce.shipping_value": {
+                "type": "FLOAT",
+                "description": "Shipping cost in local currency"
+            },
+            "ecommerce.tax_value": {
+                "type": "FLOAT",
+                "description": "Tax amount in local currency"
+            },
+            "ecommerce.total_item_quantity": {
+                "type": "INTEGER",
+                "description": "Total number of items in the transaction"
+            },
+            "ecommerce.unique_items": {
+                "type": "INTEGER",
+                "description": "Number of unique items in the transaction"
+            }
+        },
+        
+        "items_array": {
+            "type": "REPEATED RECORD",
+            "description": "Array of product items involved in the event",
+            "fields": {
+                "items.item_id": {
+                    "type": "STRING",
+                    "description": "Product identifier"
+                },
+                "items.item_name": {
+                    "type": "STRING",
+                    "description": "Product name"
+                },
+                "items.item_brand": {
+                    "type": "STRING",
+                    "description": "Product brand"
+                },
+                "items.item_category": {
+                    "type": "STRING",
+                    "description": "Product category"
+                },
+                "items.price": {
+                    "type": "FLOAT",
+                    "description": "Product price in local currency"
+                },
+                "items.quantity": {
+                    "type": "INTEGER",
+                    "description": "Quantity of the item"
+                },
+                "items.item_revenue": {
+                    "type": "FLOAT",
+                    "description": "Revenue for this item (price × quantity)"
+                },
+                "items.coupon": {
+                    "type": "STRING",
+                    "description": "Coupon code applied to the item"
+                }
+            }
+        },
+        
+        "traffic_sources": {
+            "traffic_source.source": {
+                "type": "STRING",
+                "description": "Traffic source (e.g., google, direct)"
+            },
+            "traffic_source.medium": {
+                "type": "STRING",
+                "description": "Traffic medium (e.g., organic, cpc, email)"
+            },
+            "traffic_source.name": {
+                "type": "STRING",
+                "description": "Campaign name"
+            }
+        },
+        
+        "device_fields": {
+            "device.category": {
+                "type": "STRING",
+                "description": "Device type (mobile, tablet, desktop)"
+            },
+            "device.operating_system": {
+                "type": "STRING",
+                "description": "Operating system of the device"
+            },
+            "device.web_info.browser": {
+                "type": "STRING",
+                "description": "Web browser used"
+            }
+        },
+        
+        "event_params": {
+            "type": "REPEATED RECORD",
+            "description": "Event-specific parameters in key-value format",
+            "access_pattern": "SELECT (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location') AS page_url",
+            "common_keys": [
+                "page_location", 
+                "page_title", 
+                "page_referrer", 
+                "engagement_time_msec", 
+                "session_id"
+            ]
+        },
+        
+        "key_e_commerce_events": {
+            "page_view": "User views a page",
+            "view_item": "User views a product",
+            "view_item_list": "User views a list of products",
+            "add_to_cart": "User adds an item to cart",
+            "begin_checkout": "User begins checkout process",
+            "add_shipping_info": "User adds shipping information",
+            "add_payment_info": "User adds payment information",
+            "purchase": "User completes a purchase"
+        },
+        
+        "common_analysis_patterns": {
+            "purchase_funnel": "Track conversion through view_item → add_to_cart → begin_checkout → purchase",
+            "revenue_analysis": "Calculate revenue by source, product, or time period",
+            "cart_abandonment": "Identify users who added items to cart but did not purchase",
+            "product_performance": "Analyze which products generate the most revenue or have highest conversion"
+        },
+        
+        "query_tips": {
+            "unnest_items": "Use UNNEST(items) AS item to access product details",
+            "extract_params": "Use SELECT ... FROM UNNEST(event_params) WHERE key = 'param_name' to extract specific parameters",
+            "timestamp_conversion": "Divide event_timestamp by 1,000,000 to convert from microseconds to seconds",
+            "session_analysis": "Group by (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') to analyze by session"
+        }
+    }
+    
+    # 也可以添加一些示例查詢，以幫助LLM更好地理解如何使用GA4數據
+    example_queries = [
+        {
+            "question": "What is the total revenue from purchases?",
+            "query": """
+            SELECT 
+                SUM(ecommerce.purchase_revenue) AS total_revenue 
+            FROM 
+                `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` 
+            WHERE 
+                event_name = 'purchase'
+            """
+        },
+        {
+            "question": "What is the conversion rate from view to purchase?",
+            "query": """
+            WITH 
+            viewers AS (
+                SELECT 
+                    COUNT(DISTINCT user_pseudo_id) as total_viewers
+                FROM 
+                    `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+                WHERE 
+                    event_name = 'view_item'
+            ),
+            purchasers AS (
+                SELECT 
+                    COUNT(DISTINCT user_pseudo_id) as total_purchasers
+                FROM 
+                    `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+                WHERE 
+                    event_name = 'purchase'
+            )
+            SELECT 
+                total_viewers,
+                total_purchasers,
+                (total_purchasers / total_viewers) * 100 as conversion_rate_percent
+            FROM 
+                viewers, purchasers
+            """
+        }
