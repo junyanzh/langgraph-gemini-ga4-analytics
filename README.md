@@ -1,60 +1,157 @@
-# LangGraph Gemini GA4 Analytics
+# # TheLook E-commerce Analytics Agent with UQLM
 
-A conversational analytics assistant for GA4 e-commerce data that leverages LangGraph for workflow orchestration, Google Gemini for natural language processing, and BigQuery for data querying. This project simplifies the complex GA4 data structure, enabling users to extract actionable insights through plain English queries.
+A conversational analytics assistant for **TheLook** synthetic e-commerce data, now enhanced with **UQLM** (Uncertainty Quantification for Language Models) to measure confidence in each AI-generated response.
 
-## Repository Contents
+---
+```plaintext
+├── ga4/                                # Original GA4 PoC (unchanged on main)
+│   ├── README.md
+│   ├── ga4_schema.json
+│   └── gemini_langgraph_ga4_query_agent.ipynb
+│
+└── thelook-uqlm/                       # This branch’s PoC for TheLook + UQLM
+    ├── notebooks/
+    │   └── thelook_uqlm_agent.ipynb    # Full Jupyter implementation
+    ├── schema/
+    │   └── thelook_schema.json         # Schema definition for TheLook dataset
+    ├── diagrams/
+    │   ├── workflow.mmd                # Mermaid workflow definition
+    │   └── architecture.mmd            # Mermaid architecture overview
+    ├── docs/
+    │   └── tech_blog_outline.md        # Guidance for the Medium author
+    ├── prompts/
+    │   └── system_prompt.txt           # Updated system prompt for TheLook
+    ├── tests/
+    │   └── uqlm_tests.py               # UQLM scenario test scripts
+    └── README.md                       # ← You are here
+```
 
-- **Jupyter Notebook (.ipynb):** Contains the implementation and interactive examples of the GA4 analytics assistant.
-- **Schema File (.json):** A simplified GA4 schema representation focused on e-commerce analytics, used for generating accurate SQL queries.
-- **Prompt File (.txt):** Contains the system prompt with detailed instructions for Google Gemini, including role guidance, SQL best practices, and example queries.
+---
 
-## Setup Instructions
+## ✨ What’s New in `thelook-uqlm`
 
-### Configure Google Cloud Environment
+1. **Dataset Swap**  
+   - Switched from GA4 sample → `bigquery-public-data.thelook_ecommerce`  
+   - New schema (`thelook_schema.json`) covers `orders`, `order_items`, `users`, `products`, `events`.
 
-- Set up your Google Cloud project and authenticate your environment.
-- Update your project ID and region in the code as needed (e.g., `PROJECT_ID`, `REGION`).
+2. **UQLM Integration**  
+   - Hybrid approach: try **real** UQLM BlackBoxUQ (semantic_negentropy + noncontradiction) in a separate thread; fallback to **intelligent simulation** if unavailable or times out.  
+   - Expose `real_uqlm_scoring()` to generate multiple answer candidates and quantify their confidence scores.
 
-### Run the Jupyter Notebook
+3. **Extended Testing Suite**  
+   - `tests/uqlm_tests.py` covers:  
+     - **Normal queries** → expect high confidence (≥0.85)  
+     - **No-data queries** → expect very high confidence (≈0.95)  
+     - **Hallucination scenarios** → expect low confidence (≤0.6)  
+     - **Threshold sensitivity analysis**  
 
-- Open the provided `.ipynb` file to start interacting with the conversational GA4 analytics assistant.
+4. **Interactive Agent**  
+   - `notebooks/thelook_uqlm_agent.ipynb` with:  
+     - Full LangGraph workflow  
+     - `run_agent()` runner with UQLM scoring printed inline  
+     - `interactive_chat()` + batch test functions  
 
-## How It Works
+5. **Documentation for Tech Writer**  
+   - `docs/tech_blog_outline.md` contains the outline and figure list for the upcoming Medium post.
 
-The project workflow includes:
+---
 
-### Schema Loading
-- A simplified GA4 schema is loaded to assist in constructing accurate SQL queries.
+## 🚀 Quick Start
 
-### Natural Language Query Translation
-- User queries in plain English are converted into SQL queries that are compatible with BigQuery's GA4 data structure.
+1. **Clone and switch branch** (via GitHub GUI or Desktop as described above)
 
-### Query Execution
-- The generated SQL is executed against BigQuery, and the results are formatted and returned to the user.
+2. **Install dependencies** (if running locally)
+   ```bash
+   pip install -U langchain_google_vertexai langgraph google-cloud-bigquery uqlm
+   ```
+## Configure your GCP project
 
-### Final Answer Submission
-- The assistant presents the results along with actionable insights in an easy-to-understand format.
+In `notebooks/thelook_uqlm_agent.ipynb` Cell 2, set:
 
-## Example Query
+```python
+PROJECT_ID = "your-gcp-project-id"
+REGION     = "US"
+```
 
-For instance, when a user asks:
+---
 
-> "What's our total revenue from the last month?"
+## Run the Jupyter Notebook
 
-The agent will:
+Open `notebooks/thelook_uqlm_agent.ipynb`
 
-1. Generate an SQL query to calculate the total revenue.
-2. Execute the query on BigQuery.
-3. Return a summary such as:
-   > "Based on the data, your total revenue for the last month was $X. This metric is crucial for evaluating overall business performance."
+Execute cells sequentially:
 
-## Future Enhancements
+1. **Imports & installs**
 
-- **Visualization Integration:** Automatic chart generation for numerical results.
-- **Advanced Analytics:** Incorporate predictive analytics and anomaly detection for deeper insights.
-- **Customized Reporting:** Enable scheduled reporting based on natural language specifications.
-- **Cross-Source Analysis:** Extend data integration beyond GA4 to other relevant data sources.
+2. **Schema definition**
 
-## Contributing
+3. **Tool & node functions**
 
-Contributions are welcome! If you have improvements or bug fixes, please open an issue or submit a pull request.
+4. **Workflow construction**
+
+5. **UQLM integration (Cell 10)**
+
+6. **Agent runner & tests**
+
+---
+
+## Try it out
+
+In the notebook, run:
+
+```python
+run_agent("What is the total revenue from completed orders?")
+```
+
+UQLM candidate scores will print automatically.
+
+---
+
+## Launch interactive loop:
+*(you can define and run this later in the notebook as needed)*
+
+## Mermaid Diagrams (to embed)
+
+**Workflow Diagram**  
+`diagrams/workflow.mmd`
+
+**System Architecture**  
+`diagrams/architecture.mmd`
+
+```plaintext
+(Tech writer can export these with Mermaid Live Editor and include as figures in the blog.)
+```
+
+---
+
+## 🔮 Future Work
+
+- **Asynchronous UQLM in production**  
+  Replace hybrid thread solution with true `asyncio` / FastAPI endpoint
+
+- **Dynamic thresholding**  
+  Adapt UQLM cutoff based on historical performance
+
+- **Visualization layer**  
+  Auto-chart candidate score distributions and final answers
+
+- **Multi-model scoring**  
+  Integrate white-box and adjudicator scorers alongside `BlackBoxUQ`
+
+---
+
+## 🤝 Contributing
+
+This branch is exclusively for the **TheLook + UQLM PoC**. Feel free to:
+
+- Report issues in this branch
+- Submit PRs for:
+  - Schema tweaks  
+  - New UQLM scorers  
+  - Richer test scenarios
+- Review Mermaid diagrams (`*.mmd`) for clarity
+
+```plaintext
+Once finalized, we’ll merge into main or tag a v1.0-uqlm release.
+```
+
